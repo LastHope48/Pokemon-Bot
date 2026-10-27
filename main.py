@@ -26,6 +26,7 @@ async def go(ctx):
 
         pokemon = Pokemon(author)  # Yeni bir Pokémon oluşturma
         await pokemon.get_data()
+        pokemon.evolutions = await pokemon.get_evolutions()
 
         await ctx.send(await pokemon.info())  # Pokémon hakkında bilgi gönderilmesi
 
@@ -39,6 +40,62 @@ async def go(ctx):
             await ctx.send("Pokémonun görüntüsü yüklenemedi!")
     else:
         await ctx.send("Zaten kendi Pokémonunuzu oluşturdunuz!")  # Bir Pokémon'un daha önce oluşturulup oluşturulmadığını gösteren bir mesaj
+
+@bot.command(help="Pokemonunuzu besler.")
+async def gofeed(ctx):
+    author = ctx.author.name
+
+    if author not in Pokemon.pokemons.keys():
+        await ctx.send("Pokemonunuzu oluşturmadınız!\n!go Komuduyla oluşturabilirsiniz.")
+        return
+
+    pokemon = Pokemon.pokemons.get(author)
+    await pokemon.feed_pokemon()
+
+    await ctx.send(f"Pokemonunuzu beslediniz! Şuanki beslenme sayacı: {pokemon.feed}")
+
+@bot.command(help="Pokemonunuzun bilgilerini verir.")
+async def goinfo(ctx):
+    author = ctx.author.name
+
+    if author in Pokemon.pokemons.keys():
+        pokemon = Pokemon.pokemons.get(author)
+
+        await ctx.send(await pokemon.info())  # Pokémon hakkında bilgi gönderilmesi
+
+        image_url = await pokemon.show_img()  # Pokémon resminin URL'sini alma
+
+        if image_url:
+            embed = discord.Embed()  # Gömülü mesajı oluşturma
+            embed.set_image(url=image_url)  # Pokémon'un görüntüsünün ayarlanması
+            await ctx.send(embed=embed)  # Görüntü içeren gömülü bir mesaj gönderme
+        else:
+            await ctx.send("Pokémonun görüntüsü yüklenemedi!")
+
+    else:
+        await ctx.send("Pokemonunuzu oluşturmadınız!\n!go Komuduyla oluşturabilirsiniz.")
+
+@bot.command(help="Pokemonunuz ile bir kullanıcıya saldırın.")
+async def goattack(ctx):
+    author = ctx.author.name
+
+    if author not in Pokemon.pokemons.keys():
+        await ctx.send("Pokemonunuz yok!")
+        return
+
+    enemy = ctx.message.mentions[0] if ctx.message.mentions else None
+
+    if enemy is None:
+        await ctx.send("Bir kişi etiketleyin!")
+        return
+
+    enemy = Pokemon.pokemons.get(enemy.name)
+
+    pokemon = Pokemon.pokemons.get(author)
+
+    attack_message = await pokemon.attack(enemy)
+
+    await ctx.send(attack_message)
 
 @bot.command(help="Pokemon'unuzu sıfırlar.")
 async def goreset(ctx):
