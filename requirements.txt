@@ -1,0 +1,3 @@
+discord.py
+opencv_python
+numpy
